@@ -1,0 +1,144 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>tracking.js - color hello world</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/tracking.js/1.1.3/tracking-min.js"></script>
+  <script src="script.js"></script>
+  <link href="style.css" rel="stylesheet" type="text/css" />
+  <style>
+  .rect {
+    width: 80px;
+    height: 80px;
+    position: absolute;
+    left: -1000px;
+    top: -1000px;
+  }
+  </style>
+</head>
+<body>
+  <div class="demo-title">
+    <p><a href="http://trackingjs.com" target="_parent">tracking.js</a> － detect certain colors in a image</p>
+  </div>
+
+  <div class="demo-frame">
+    <div class="demo-container">
+      <img id="img" width="100%" src="images/cc-b&w-code.jpg" />
+      <!-- <img id="img" width="100%" src="images/cc-b&w.jpg" /> -->
+      <!-- <img id="img" width="100%" src="images/cc.jpg" /> -->
+      <!-- <img id="img" width="100%" src="images/colors-demojpg.jpg" /> -->
+    </div>
+  </div>
+
+  <script>
+    window.onload = function() {
+	// debugger;
+      var img = document.getElementById('img');
+      var demoContainer = document.querySelector('.demo-container');
+
+	  var detectarSkew;
+	  
+	  var imgInitWidth = img.width;
+	  var firstPixFound = [];
+	  var pixCount = 0;
+	  var pixLine = 0;
+	  tracking.ColorTracker.registerColor('black', function(r, g, b) {
+		var cond = (
+			(r < 70 && g < 70 && b < 70) || (
+				(r == g && r == b) && (r < 128 && g < 128 && b < 128)
+			)
+		);
+
+		if ( cond ) { 
+			var cond1 = !firsPixFound[pixLine] && firsPixFound[pixLine] == ;
+			if( cond1 ){ firsPixFound.push(pixCount); }
+
+			return true; 
+		}
+
+		pixCount +=1 
+		if(pixCount === imgInitWidth){ pixCount = 0; pixLine +=1  }
+
+		return false;
+	  });
+
+	
+      var tracker = new tracking.ColorTracker('black');
+	  var heightsRecover;
+	  var posYCaptura = {};
+	  var widthCaptura = {};
+	  var cols = 0;
+
+      tracker.on('track', function(event) {
+
+		var heightPromedio = 0;
+		
+		var widthPromedio = 0;
+		var posYPromedio = 0;
+
+			cols = (cols === 0)? event.data.length : cols ;
+
+		//se recorre analiza captura la data del traking de color 
+		// para generar numeros promeidales para ser usados para capturar zonas mas precisas
+		// las cuales ayudaran mantener un margen de error reducido. 
+		var i = 0;
+        event.data.forEach(function(rect) {
+		  //se determina cuales son las posiciones de con mayores apariciones
+		  posYCaptura[rect.y] = ( posYCaptura[rect.y] >= 0 ) ? (posYCaptura[rect.y] + 1) : 0; 
+		  widthCaptura[rect.width] = ( widthCaptura[rect.width] >= 0 ) ? (widthCaptura[rect.width] + 1) : 0;
+
+		  //se recolecta el promedio de posicion
+		  if( (cols-1) === i ){
+			
+			var posYValues = Object.keys(posYCaptura); // se capturan los indeces de posicion recopilados
+			var posYPuntos = Object.values(posYCaptura); // se captura puntajes
+			var posYMayor = Math.max.apply(null, posYPuntos); // se selecciona el utlimo elemento sabiendo que seria el de mayor puntaje
+			posYPromedio = posYValues[posYPuntos.indexOf(posYMayor)]; // se toma el valor de posicion promedio basado en el puntaje
+		  
+		  	//se determina cual es el promedio de ancho de las columnas
+		  	var wValues = Object.keys(widthCaptura); // se capturan los indeces de posicion recopilados
+			var wPuntos = Object.values(widthCaptura); // se captura puntajes
+			var wMayor = Math.max.apply(null, wPuntos); // se selecciona el utlimo elemento sabiendo que seria el de mayor puntaje
+			
+			widthPromedio = parseFloat(wValues[wPuntos.indexOf(wMayor)]); // se toma el valor de posicion promedio basado en el puntaje
+
+			console.log(event.data);
+		  }
+		
+		  //se determina cual es el alto mayor encontrado
+		  heightPromedio = ( rect.height > heightPromedio )? rect.height : heightPromedio;
+        i++;});
+
+		event.data.forEach(function(rect){
+			var margenCapturaH = 4;//height
+			var margenCapturaW = 0;//width
+
+			var heightMargen = ( heightPromedio );
+			var widthMargen = ( widthPromedio + margenCapturaW );
+			var posYMargen = ( posYPromedio - ( margenCapturaH / 2 ) );
+			var posXMargen = ( rect.x - ( margenCapturaW / 2 ) );
+
+			
+			window.plot(rect.x, posYMargen, widthMargen, heightMargen, 'palegreen');
+			// window.plot(rect.x, rect.y, rect.width, rect.height, 'palegreen');
+		})
+		
+      });
+
+      tracking.track('#img', tracker);
+
+      window.plot = function(x, y, w, h, color) {
+        var rect = document.createElement('div');
+        document.querySelector('.demo-container').appendChild(rect);
+        rect.classList.add('rect');
+        rect.style.border = '2px solid ' + color;
+        rect.style.width = w + 'px';
+        rect.style.height = h + 'px';
+        rect.style.left = (img.offsetLeft + x) + 'px';
+        rect.style.top = (img.offsetTop + y) + 'px';
+      };
+    };
+  </script>
+
+</body>
+</html>
